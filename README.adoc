@@ -1,0 +1,99 @@
+== Introduction
+
+This is semestral work for https://bilakniha.cvut.cz/en/predmet3461206.html[Programming Paradigms course] at https://fit.cvut.cz/en[FIT CTU].
+
+The goal of this work was to create program that would take lambda calculus term with syntactic sugar and convert it to simple lambda calculus term without syntactic sugar.
+
+
+Valid lambda terms in https://en.wikipedia.org/wiki/Lambda_calculus[simplest form]:
+
+* variable,
+* ```(λa. B)``` where ```a``` is a variable and ```B``` is lambda term,
+* ```(A B)``` where ```A``` and ```B``` are lambda terms,
+* ```(A)``` where ```A``` is lambda term.
+
+
+.Aplication can:
+* detect invalid inputs, 
+* substitute Church numerals, boolean literals, arithmetical and logical functions, 
+* substitute symbolic functions (for example ```zero```, ```Y```, etc.), 
+* substitute lambda functions with multiple variables, 
+* change configurable list of symbolic function and its definitions. 
+
+== Example usage
+
+
+Desugar will take place after calling function ```(desugar 'term)```. ```term``` can be standalone variable, number, known symbolic function or list representating lambda term.
+List must be composed of lambda symbols - variable name, numbers, escaped ```.``` (```\.```), lambda symbol ```λ```, function names, lists can of course be nested.
+Valid input can look like this ```(desugar '((λ a b \. + a b) 2 3))```
+If everything works correctly, the output should be lambda calculus without any syntactic sugar and should be able to be copied and evaluated in https://lambdulus.github.io/[Lambdulus].
+
+
+NOTE: Output is provided as call to `display` function. This shows non escaped output that can be used and compied into https://lambdulus.github.io/[Lambdulus].
+
+=== Examples
+
+* detection of invalid inputs
+  ** ```(desugar '(λ a . B))```=> unescaped dot
+  ** ```(desugar 'λ)```, ```(desugar '\.)```=> invalid lambda term
+  ** ```(desugar '(λ \. a b))```=> missing variable in lambda function
+  ** ```(desugar '(λ a b \. ))```=> missing body of lambda function
+  ** ```(desugar '(λ 0 \. a))```=> number as variable
+  ** ```(desugar '(λ a T \. a))```=> known symbolic function as variable
+
+
+* substitute Church numerals=> boolean literals=> arithmetical and logical functions
+  ** ```(desugar '3)```, ```(desugar '0)```=> Church numerals
+  ** ```(desugar 'T)```, ```(desugar 'F)```=> boolean literals
+  ** ```(desugar '\+)```, ```(desugar '(/ 4 2))```, ```(desugar '(+ 4 2))```, ```(desugar '(- 4 2))```, ```(desugar '(* 4 2))```=> arithmetical functions
+  ** ```(desugar '(AND T T))```, ```(desugar '(NOT T))```, ```(desugar '(OR T F))```=>  logical functions
+
+
+
+* substitute symbolic functions
+** ```(desugar 'ZERO)```, ```(desugar '(ZERO (- 2 2)))```=> zero equivalence
+** ```(desugar 'SUC)```, ```(desugar '(SUC 3))```=> successor
+** ```(desugar 'PRED)```, ```(desugar '(PRED 3))```=> predecessor
+** ```(desugar 'Y)```=> Y combinator
+** ```(desugar '((Y (λ f n \. ZERO n 1 (* n (f (-  n  1))))) 3))```=> factorial 3
+
+
+* substitute lambda functions with multiple variables
+    ** ```(desugar '(λ a b c d e \. a b c d e))```
+    ** ```(desugar '(λ a b \. a (λ c d \. (λ e f g h aaa \. aaa))))```
+
+
+* configurable list of symbolic function and its definitions
+    ** list can be edited in macro ```functions-macro``` at the beginning of the file=> just add a list to the highlighted list of function that looks like this: ```(function_name 'lambda_term)```
+    ** dots must be escaped (```\.```) 
+    ** you can add lambda term with syntactic sugar and other symbolic functions 
+
+
+=== Supported symbolic functions
+
+[options="autowidth"]
+|===
+<h|Name of function <h| Expands to <h| Description
+| `+` | `(λ x y s z . x s (y s z))` | Addition
+| `-` | `(λ m n . (n PRED) m)` | Subtraction
+| `/` | `(λ n . Y (λ c n m f x . (λ d . ZERO d (0 f x) (f (c d m f x))) (- n m)) (SUC n))`| Division
+| `*` | `(λ x y s . x (y s))`| Multiplication
+| `Y` | `(λ f . (λ x . f (x x)) (λ x . f (x x)))` | Y-combinator (recursion)
+| `ZERO` | `(λ n . n (λ x . (λ t f . f)) (λ t f . t))` | Is zero?
+| `SUC` | `(λ n s z . s (n s z))` | Successor
+| `PRED` | `(λ x s z . x (λ f g . g (f s)) (λ g . z) (λ u . u))` | Predecessor
+| `AND` | `(λ x y . x y x)` | Logical AND
+| `OR` | `(λ x y . x x y)` | Logical OR
+| `T` | `(λ t f . t)` | True
+| `F` | `(λ t f . f)` | False
+| `NOT` | `(λ x t f . x f t)` | Negation
+|===
+
+=== Supported custom symbolic functions used for testing only
+Examples of custom symbolic functions
+[options="autowidth"]
+|===
+<h| Name of function <h| Expands to 
+| `HELLOWORLD` | `(λ x y z z sa a wwdwdw . h e l l o T F 0 1)` 
+| `HELLOWORLD2` | `(0 HELLOWORLD 1)`
+|===
